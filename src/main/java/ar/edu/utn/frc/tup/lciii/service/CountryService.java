@@ -1,8 +1,11 @@
 package ar.edu.utn.frc.tup.lciii.service;
 
+import ar.edu.utn.frc.tup.lciii.dtos.common.CountryDTO;
+import ar.edu.utn.frc.tup.lciii.entities.LanguageEntity;
 import ar.edu.utn.frc.tup.lciii.model.Country;
 import ar.edu.utn.frc.tup.lciii.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,6 +19,7 @@ public class CountryService {
 
         private final CountryRepository countryRepository;
 
+        @Autowired
         private final RestTemplate restTemplate;
 
         public List<Country> getAllCountries() {
@@ -31,16 +35,27 @@ public class CountryService {
         private Country mapToCountry(Map<String, Object> countryData) {
                 Map<String, Object> nameData = (Map<String, Object>) countryData.get("name");
                 return Country.builder()
+                        .code((String) countryData.get("cca3"))
                         .name((String) nameData.get("common"))
                         .population(((Number) countryData.get("population")).longValue())
                         .area(((Number) countryData.get("area")).doubleValue())
                         .region((String) countryData.get("region"))
                         .languages((Map<String, String>) countryData.get("languages"))
+                        .borders((List<String>) countryData.get("borders"))
                         .build();
         }
 
 
-        private CountryDTO mapToDTO(Country country) {
-                return new CountryDTO(country.getCode(), country.getName());
+        public CountryDTO mapToDTO(Country country) {
+                return new CountryDTO(country.getCode(), country.getName(), country.getRegion(), country.getLanguages());
+        }
+
+
+        public List<CountryDTO> getCountriesByLanguage(String language) {
+                List<Country> countries = getAllCountries();
+                return countries.stream()
+                        .filter(country -> country.getLanguages().containsValue(language))
+                        .map(this::mapToDTO)
+                        .collect(Collectors.toList());
         }
 }

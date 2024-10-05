@@ -1,30 +1,29 @@
-package ar.edu.utn.frc.tup.lciii.controllers;
+package ar.edu.utn.frc.tup.lciii.service.imp;
 
 import ar.edu.utn.frc.tup.lciii.dtos.common.CountryDTO;
 import ar.edu.utn.frc.tup.lciii.dtos.common.CountryRequestDTO;
 import ar.edu.utn.frc.tup.lciii.service.CountryService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/api/countries")
-@RequiredArgsConstructor
-public class CountryController {
+public class CountryServiceImp {
 
-    private final CountryService countryService;
+    private CountryService countryService;
 
-    @GetMapping
+
     public ResponseEntity<List<CountryDTO>> getAllCountries() {
         return ResponseEntity.ok(countryService.getAllCountries().stream()
                 .map(countryService::mapToDTO)
                 .collect(Collectors.toList()));
     }
-    @GetMapping("/codeOrName")
-    public List<CountryDTO> getAllCountries(@RequestParam(required = false) String name, @RequestParam(required = false) String code) {
+
+    public List<CountryDTO> getAllCountries( String name,  String code) {
         List<CountryDTO> countries = countryService.getAllCountries().stream()
                 .map(countryService::mapToDTO)
                 .collect(Collectors.toList());
@@ -50,8 +49,7 @@ public class CountryController {
         return countries;
     }
 
-    @GetMapping("/region")
-    public List<CountryDTO> getCountriesByRegion(@RequestParam(required = false) String region) {
+    public List<CountryDTO> getCountriesByRegion( String region) {
         List<CountryDTO> countries = countryService.getAllCountries().stream()
                 .map(countryService::mapToDTO)
                 .collect(Collectors.toList());
@@ -76,14 +74,26 @@ public class CountryController {
         return countries;
     }
 
-    @GetMapping("/{language}/language")
-    public ResponseEntity<List<CountryDTO>> getCountriesByLanguage(@PathVariable String language) {
-        List<CountryDTO> countries = countryService.getCountriesByLanguage(language);
-        return ResponseEntity.ok(countries);
+    public List<CountryDTO> getCountriesByLanguage( String language) {
+
+        List<CountryDTO> countries = countryService.getAllCountries().stream()
+                .map(countryService::mapToDTO)
+                .collect(Collectors.toList());
+
+        if (language != null) {
+            countries = countries.stream()
+                    .filter(country -> country.getLanguages().containsKey(language))
+                    .collect(Collectors.toList());
+        }
+
+        if (countries.isEmpty()) {
+            throw new RuntimeException("No se encontraron paises con los parametros ingresados");
+        }
+
+        return countries;
     }
 
-    @PostMapping
-    public ResponseEntity<List<CountryDTO>> saveCountries(@RequestBody CountryRequestDTO request) {
+    public ResponseEntity<List<CountryDTO>> saveCountries( CountryRequestDTO request) {
         List<CountryDTO> countries = countryService.getAllCountries().stream()
                 .limit(request.getAmountOfCountryToSave())
                 .map(countryService::mapToDTO)
@@ -91,5 +101,3 @@ public class CountryController {
         return ResponseEntity.ok(countries);
     }
 }
-
-
